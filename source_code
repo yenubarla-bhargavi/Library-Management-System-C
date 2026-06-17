@@ -1,0 +1,318 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+struct Book
+{
+    int bookID;
+    char title[50];
+    char author[50];
+    int issued;
+};
+
+void addBook();
+void displayBooks();
+void searchBook();
+void issueBook();
+void returnBook();
+void deleteBook();
+
+int main()
+{
+    int choice;
+
+    while (1)
+    {
+        printf("\n====================================");
+        printf("\n    LIBRARY MANAGEMENT SYSTEM");
+        printf("\n====================================");
+        printf("\n1. Add Book");
+        printf("\n2. Display All Books");
+        printf("\n3. Search Book");
+        printf("\n4. Issue Book");
+        printf("\n5. Return Book");
+        printf("\n6. Delete Book");
+        printf("\n7. Exit");
+        printf("\nEnter Choice: ");
+
+        scanf("%d", &choice);
+
+        switch (choice)
+        {
+        case 1:
+            addBook();
+            break;
+
+        case 2:
+            displayBooks();
+            break;
+
+        case 3:
+            searchBook();
+            break;
+
+        case 4:
+            issueBook();
+            break;
+
+        case 5:
+            returnBook();
+            break;
+
+        case 6:
+            deleteBook();
+            break;
+
+        case 7:
+            printf("\nThank You!\n");
+            exit(0);
+
+        default:
+            printf("\nInvalid Choice!\n");
+        }
+    }
+
+    return 0;
+}
+
+void addBook()
+{
+    FILE *fp;
+    struct Book b;
+
+    fp = fopen("library.dat", "ab");
+
+    if (fp == NULL)
+    {
+        printf("\nFile Error!\n");
+        return;
+    }
+
+    printf("\nEnter Book ID: ");
+    scanf("%d", &b.bookID);
+
+    printf("Enter Book Title: ");
+    scanf(" %[^\n]", b.title);
+
+    printf("Enter Author Name: ");
+    scanf(" %[^\n]", b.author);
+
+    b.issued = 0;
+
+    fwrite(&b, sizeof(b), 1, fp);
+
+    fclose(fp);
+
+    printf("\nBook Added Successfully!\n");
+}
+
+void displayBooks()
+{
+    FILE *fp;
+    struct Book b;
+
+    fp = fopen("library.dat", "rb");
+
+    if (fp == NULL)
+    {
+        printf("\nNo Records Found!\n");
+        return;
+    }
+
+    printf("\n-------------------------------------------------------------");
+    printf("\nID\tTitle\t\tAuthor\t\tStatus");
+    printf("\n-------------------------------------------------------------");
+
+    while (fread(&b, sizeof(b), 1, fp))
+    {
+        printf("\n%d\t%s\t\t%s\t\t%s",
+               b.bookID,
+               b.title,
+               b.author,
+               b.issued ? "Issued" : "Available");
+    }
+
+    printf("\n");
+
+    fclose(fp);
+}
+
+void searchBook()
+{
+    FILE *fp;
+    struct Book b;
+    int id, found = 0;
+
+    fp = fopen("library.dat", "rb");
+
+    if (fp == NULL)
+    {
+        printf("\nNo Records Found!\n");
+        return;
+    }
+
+    printf("\nEnter Book ID: ");
+    scanf("%d", &id);
+
+    while (fread(&b, sizeof(b), 1, fp))
+    {
+        if (b.bookID == id)
+        {
+            printf("\nBook Found!");
+            printf("\nBook ID : %d", b.bookID);
+            printf("\nTitle   : %s", b.title);
+            printf("\nAuthor  : %s", b.author);
+            printf("\nStatus  : %s",
+                   b.issued ? "Issued" : "Available");
+
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        printf("\nBook Not Found!\n");
+    }
+
+    fclose(fp);
+}
+
+void issueBook()
+{
+    FILE *fp;
+    struct Book b;
+    int id, found = 0;
+
+    fp = fopen("library.dat", "rb+");
+
+    if (fp == NULL)
+    {
+        printf("\nNo Records Found!\n");
+        return;
+    }
+
+    printf("\nEnter Book ID to Issue: ");
+    scanf("%d", &id);
+
+    while (fread(&b, sizeof(b), 1, fp))
+    {
+        if (b.bookID == id)
+        {
+            if (b.issued == 1)
+            {
+                printf("\nBook Already Issued!\n");
+            }
+            else
+            {
+                b.issued = 1;
+
+                fseek(fp, -sizeof(b), SEEK_CUR);
+                fwrite(&b, sizeof(b), 1, fp);
+
+                printf("\nBook Issued Successfully!\n");
+            }
+
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        printf("\nBook Not Found!\n");
+    }
+
+    fclose(fp);
+}
+
+void returnBook()
+{
+    FILE *fp;
+    struct Book b;
+    int id, found = 0;
+
+    fp = fopen("library.dat", "rb+");
+
+    if (fp == NULL)
+    {
+        printf("\nNo Records Found!\n");
+        return;
+    }
+
+    printf("\nEnter Book ID to Return: ");
+    scanf("%d", &id);
+
+    while (fread(&b, sizeof(b), 1, fp))
+    {
+        if (b.bookID == id)
+        {
+            if (b.issued == 0)
+            {
+                printf("\nBook Already Available!\n");
+            }
+            else
+            {
+                b.issued = 0;
+
+                fseek(fp, -sizeof(b), SEEK_CUR);
+                fwrite(&b, sizeof(b), 1, fp);
+
+                printf("\nBook Returned Successfully!\n");
+            }
+
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found)
+    {
+        printf("\nBook Not Found!\n");
+    }
+
+    fclose(fp);
+}
+
+void deleteBook()
+{
+    FILE *fp, *temp;
+    struct Book b;
+    int id, found = 0;
+
+    fp = fopen("library.dat", "rb");
+
+    if (fp == NULL)
+    {
+        printf("\nNo Records Found!\n");
+        return;
+    }
+
+    temp = fopen("temp.dat", "wb");
+
+    printf("\nEnter Book ID to Delete: ");
+    scanf("%d", &id);
+
+    while (fread(&b, sizeof(b), 1, fp))
+    {
+        if (b.bookID == id)
+        {
+            found = 1;
+        }
+        else
+        {
+            fwrite(&b, sizeof(b), 1, temp);
+        }
+    }
+
+    fclose(fp);
+    fclose(temp);
+
+    remove("library.dat");
+    rename("temp.dat", "library.dat");
+
+    if (found)
+        printf("\nBook Deleted Successfully!\n");
+    else
+        printf("\nBook Not Found!\n");
+}
